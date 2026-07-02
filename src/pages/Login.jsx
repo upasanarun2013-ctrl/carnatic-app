@@ -1,14 +1,27 @@
 import { useState } from 'react'
+import { signInWithEmailAndPassword } from 'firebase/auth'
+import { auth } from '../firebase'
 
 export default function Login({ onLogin }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!email || !password) { setError('Please fill in all fields'); return }
-    // Placeholder login — will connect to Firebase later
-    onLogin({ name: 'Student A', email })
+    setLoading(true)
+    setError('')
+    try {
+      const result = await signInWithEmailAndPassword(auth, email, password)
+      onLogin({ name: result.user.email, email: result.user.email, uid: result.user.uid })
+    } catch (err) {
+      if (err.code === 'auth/invalid-credential') setError('Incorrect email or password.')
+      else if (err.code === 'auth/user-not-found') setError('No account found with that email.')
+      else if (err.code === 'auth/too-many-requests') setError('Too many attempts. Try again later.')
+      else setError('Something went wrong. Please try again.')
+    }
+    setLoading(false)
   }
 
   return (
@@ -24,7 +37,7 @@ export default function Login({ onLogin }) {
       <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 12 }}>
         <input
           type="email"
-          placeholder="Student ID or email"
+          placeholder="Email"
           value={email}
           onChange={e => setEmail(e.target.value)}
           style={inputStyle}
@@ -37,7 +50,11 @@ export default function Login({ onLogin }) {
           style={inputStyle}
         />
         {error && <p style={{ color: '#e53e3e', fontSize: 13, margin: 0 }}>{error}</p>}
-        <button onClick={handleSubmit} style={btnStyle}>Sign in</button>
+        <button onClick={handleSubmit} disabled={loading} style={{
+          ...btnStyle, opacity: loading ? 0.7 : 1
+        }}>
+          {loading ? 'Signing in...' : 'Sign in'}
+        </button>
         <p style={{ textAlign: 'center', color: '#4F6AF5', fontSize: 13, cursor: 'pointer', margin: 0 }}>
           Forgot password?
         </p>
