@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { doc, getDoc } from 'firebase/firestore'
-import { db } from './firebase'
+import { db, pruneOldAudio } from './firebase'
 import Login from './pages/Login'
 import Home from './pages/Home'
 import Songs from './pages/Songs'
@@ -24,6 +24,7 @@ export default function App() {
       const docSnap = await getDoc(docRef)
       if (docSnap.exists()) {
         setUser({ ...userData, name: docSnap.data().name, role: docSnap.data().role })
+      pruneOldAudio(userData.uid)
       } else {
         setUser({ ...userData, name: userData.email })
       }
